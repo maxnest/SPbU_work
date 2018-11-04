@@ -1,0 +1,87 @@
+#!/usr/bin/env perl
+
+use Bio::SearchIO;
+
+# read blastoutput file into a new instance
+my $blast_report = new Bio::SearchIO ('-format' => 'blast',
+                                      '-file'   => $ARGV[0]);
+
+my $count = 1;
+my $hit_number = 1; # select maximum number of hits per query; 1 - print just the first best hit
+my $cur_query_name = "";
+my $cur_query_description = "";
+my $cur_query_length = "";
+
+# print header line
+print "Query name:\tQuery description:\tQuery length:\tHit name:\tHit description:\tHit Nr:\tE-value:\tScore:\tIdentity:\tPct Idn:\n";
+
+# get next result and cycle
+while (my $result = $blast_report->next_result) 
+      {
+        $cur_query_name = $result->query_name();    
+        $cur_query_description = $result->query_description();
+        $cur_query_length = $result->query_length();
+	
+        # print query info
+	# print $cur_query_name,"\t",$cur_query_description,"\t",$cur_query_length,"\t";
+
+        # print $result->query_name(),"\t",
+        #       $result->query_description(),"\t",
+        #       $result->query_length(),"\t";
+
+	# print "\n";
+        $count=1;
+ 
+      if (my $hit = $result->next_hit())
+       {
+               # print query info
+                 print $cur_query_name,"\t",$cur_query_description,"\t",$cur_query_length,"\t";
+
+                # print hit info
+                print  $hit->name(),"\t",
+                $hit->description(),"\t",
+                             $count,"\t";
+                # get next HSP and cycle
+                if( my $hsp = $hit->next_hsp())
+                      {
+                        # print HSP info
+                        print $hsp->evalue(),"\t",
+                              $hsp->score(),"\t",
+                              $hsp->num_identical(),"/",$hsp->hsp_length(),"\t",
+                              sprintf("%.2f",$hsp->percent_identity()),"%";
+                       }
+                # print end-of-line
+                print "\n";
+                $count++;
+
+   	 # get hits for each result and limit number of hits by $hit_number
+	 while (my $hit = $result->next_hit() and $count<=$hit_number) 
+               {
+                # print query info
+                print $cur_query_name,"\t",$cur_query_description,"\t",$cur_query_length,"\t";
+                   
+		# print hit info
+		print  $hit->name(),"\t",
+                $hit->description(),"\t", 
+                             $count,"\t";   
+		# get next HSP and cycle
+		if( my $hsp = $hit->next_hsp()) 
+                      {  
+			# print HSP info
+			print $hsp->evalue(),"\t",
+                              $hsp->score(),"\t",
+                              $hsp->num_identical(),"/",$hsp->hsp_length(),"\t",
+                              sprintf("%.2f",$hsp->percent_identity()),"%"; 
+                       }
+		# print end-of-line
+                print "\n";
+                $count++;
+	       }
+        } 
+      else 
+        {
+           print $cur_query_name,"\t",$cur_query_description,"\t",$cur_query_length,"\t";
+           print "no hits","\t","\t","\t","\t","\t","\t","\n"; 
+        }
+      }
+exit 0;
