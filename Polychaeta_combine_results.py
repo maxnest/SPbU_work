@@ -16,7 +16,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--nucl', type=argparse.FileType('r'), required=True)
 parser.add_argument('--amino', type=argparse.FileType('r'), required=True)
 parser.add_argument('--domains', type=argparse.FileType('r'), required=True)
-parser.add_argument('--blast', type=argparse.FileType('r'), required=True)
+parser.add_argument('--blast_nr', type=argparse.FileType('r'), required=True)
+parser.add_argument('--blast_nt', type=argparse.FileType('r'), required=True)
+parser.add_argument('--blast_Pdum', type=argparse.FileType('r'), required=True)
 parser.add_argument('--KOBAS_Hsapiens', type=argparse.FileType('r'), required=True)
 parser.add_argument('--GO', type=argparse.FileType('r'), required=True)
 parser.add_argument('--sites', type=argparse.FileType('r'), required=True,
@@ -41,6 +43,7 @@ parser.add_argument('--tail_48', type=argparse.FileType('r'), required=True,
                     help="DESeq2 table with LFC for TAIL in 48 hours")
 parser.add_argument('--tail_96', type=argparse.FileType('r'), required=True,
                     help="DESeq2 table with LFC for TAIL in 96 hours")
+parser.add_argument('--significant', type=argparse.FileType('r'), required=True)
 parser.add_argument('--output', type=str, required=True)
 args = parser.parse_args()
 
@@ -50,7 +53,8 @@ def nucl_parsing(contig_dict, nucl_fasta):
     for seq in contigs_nucl:
         contig_dict[seq.id.split(" ")[0]] = {"ID": [seq.id.split(" ")[0]], "nucl": seq.seq, "amino": "",
                                "domains": [], "GO_bio": [], "GO_mol": [], "GO_cell": [], "KEGG_Hsapiens": [],
-                               "Anno_swiss": {"hit": [], "identity": []},
+                               "Anno_swiss": {"hit": [], "identity": []}, "Anno_nt": {"hit": [], "identity": []},
+                               "Anno_Pdum": {"hit": [], "identity": []}, "significant": [],
                                "Tail_vs_Head": [], "Head_0_vs_4h": [], "Head_0_vs_12h": [], "Head_0_vs_24h": [],
                                "Head_0_vs_48h": [], "Head_0_vs_96h": [], "Tail_0_vs_4h": [], "Tail_0_vs_12h": [],
                                "Tail_0_vs_24h": [], "Tail_0_vs_48h": [], "Tail_0_vs_96h": [], "baseMean": [],
@@ -99,7 +103,11 @@ def BLAST_annotation(contig_dict, BLAST, key_tag):
     head = BLAST.readline()
     for line in BLAST:
         description = line.strip().split("\t")
-        ID, hit_name = description[0].strip().split(".p")[0], description[3]
+        if key_tag == "swiss":
+            ID, hit_name = description[0].strip().split(".p")[0], description[3]
+        else:
+            ID, hit_name = description[0].strip().split(" ")[0], description[3]
+
         if ID in contig_dict.keys():
             if hit_name == "no hits":
                 contig_dict[ID]["Anno_{key}".format(key=key_tag)]["hit"].append("No hit")
@@ -108,10 +116,11 @@ def BLAST_annotation(contig_dict, BLAST, key_tag):
                 contig_dict[ID]["Anno_{key}".format(key=key_tag)]["hit"].append(description[4])
                 contig_dict[ID]["Anno_{key}".format(key=key_tag)]["identity"].append(description[8])
 
-    for contig in contig_dict.keys():
-        if contig_dict[contig]["amino"] == "without ORF":
-            contig_dict[contig]["Anno_{key}".format(key=key_tag)]["hit"].append("-")
-            contig_dict[contig]["Anno_{key}".format(key=key_tag)]["identity"].append("-")
+    if key_tag == "swiss":
+        for contig in contig_dict.keys():
+            if contig_dict[contig]["amino"] == "without ORF":
+                contig_dict[contig]["Anno_{key}".format(key=key_tag)]["hit"].append("-")
+                contig_dict[contig]["Anno_{key}".format(key=key_tag)]["identity"].append("-")
 
 
 def domains_parsing(contig_dict, domains):
@@ -197,20 +206,31 @@ def deseq2_results(contig_dict, results, tag):
                 contig_dict[contig][el].append("low")
 
 
+def significant(contig_dict, significant):
+    for line in significant:
+        description = line.strip()
+        contig_dict[description[0]]["significant"].append("*")
+
+
 def write_output(contig_dict, output_tag):
     with open("{output_tag}.tab".format(output_tag=output_tag), 'a') as output:
-        output.write("Contig_ID\tSwiss\tIdentity\tKEGG_Hsapiens\tGO_bio\tGO_mol\tGO_cell\tbaseMean\tpadj\t"
+        output.write("Contig_ID\tNCBI_nt\tIdentity\tNCBI_Pdum\tIdentity\tSwiss\tIdentity\tKEGG_Hsapiens\t"
+                     "GO_bio\tGO_mol\tGO_cell\tbaseMean\tpadj\tsignificant\t"
                      "Tail_vs_Head\tHead_0_vs_4h\tHead_0_vs_12h\tHead_0_vs_24h\tHead_0_vs_48h\tHead_0_vs_96h\t"
                      "Tail_0_vs_4h\tTail_0_vs_12h\tTail_0_vs_24h\tTail_0_vs_48h\tTail_0_vs_96h\tNucl_seq\tAA_seq"
                      "\tDomains\n")
 
         for contig, values in contig_dict.items():
-            output.write("{ID}\t{Swiss}\t{Identity}\t{KEGG}\t{bio}\t{mol}\t{cell}\t{base}\t{padj}\t"
+            output.write("{ID}\t{nt}\t{nt_identity}\t{Pdum}\t{Pdum_identity}\t{Swiss}\t{Swiss_identity}\t"
+                         "{KEGG}\t{bio}\t{mol}\t{cell}\t{base}\t{padj}\t{significant}\t"
                          "{Sites}\t{Head_4h}\t{Head_12h}\t{Head_24h}\t{Head_48h}\t{Head_96h}\t{Tail_4h}\t{Tail_12h}\t"
                          "{Tail_24h}\t{Tail_48h}\t{Tail_96h}\t{Nucl}\t{AA}\t{Domains}\n".format(ID=contig,
-            Swiss=values["Anno_swiss"]["hit"][0], Identity=values["Anno_swiss"]["identity"][0],
+            nt=values["Anno_nt"]["hit"][0], nt_identity=values["Anno_nt"]["identity"][0],
+            Pdum=values["Anno_Pdum"]["hit"][0], Pdum_identity=values["Anno_Pdum"]["identity"][0],
+            Swiss=values["Anno_swiss"]["hit"][0], Swiss_identity=values["Anno_swiss"]["identity"][0],
             KEGG=values["KEGG_Hsapiens"][0], bio=values["GO_bio"][0], mol=values["GO_mol"][0],
             cell=values["GO_cell"][0], base=values["baseMean"][0], padj=values["padj"][0],
+            significant=values["significant"][0],
             Sites=values["Tail_vs_Head"][0], Head_4h=values["Head_0_vs_4h"][0],  Head_12h=values["Head_0_vs_12h"][0],
             Head_24h=values["Head_0_vs_24h"][0], Head_48h=values["Head_0_vs_48h"][0], Head_96h=values["Head_0_vs_96h"][0],
             Tail_4h=values["Tail_0_vs_4h"][0], Tail_12h=values["Tail_0_vs_12h"][0], Tail_24h=values["Tail_0_vs_24h"][0],
@@ -226,13 +246,16 @@ if __name__ == "__main__":
     amino_parsing(contig_dict, args.amino)
     print("Parsing table with Gene Ontology")
     GO_parsing(contig_dict, args.GO)
-    print("Parsing table with blast results")
-    BLAST_annotation(contig_dict, args.blast, "swiss")
+    print("Parsing tables with blast results")
+    BLAST_annotation(contig_dict, args.blast_nr, "swiss")
+    BLAST_annotation(contig_dict, args.blast_nt, "nt")
+    BLAST_annotation(contig_dict, args.blast_Pdum, "Pdum")
     print("Parsing table with domains")
     domains_parsing(contig_dict, args.domains)
     print("Parsing table with pathways")
     KEGG_parsing(contig_dict, args.KOBAS_Hsapiens, "KEGG_Hsapiens")
     print("Parsing tables with DE results")
+    significant(contig_dict, args.significant)
     deseq2_results(contig_dict, args.sites, "Tail_vs_Head")
     deseq2_results(contig_dict, args.head_4, "Head_0_vs_4h")
     deseq2_results(contig_dict, args.head_12, "Head_0_vs_12h")
@@ -246,3 +269,4 @@ if __name__ == "__main__":
     deseq2_results(contig_dict, args.tail_96, "Tail_0_vs_96h")
     print("Output file creating")
     write_output(contig_dict, args.output)
+
