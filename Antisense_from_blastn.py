@@ -20,15 +20,11 @@ def outfmt6_parsing(tab, minlen, dict):
         if qseqid != sseqid:
             if length >= minlen:
                 if "-" in qframe and "-" not in sframe or "-" not in qframe and "-" in sframe:
-                    if "{qseqid}_vs_{sseqid}".format(qseqid=qseqid, sseqid=sseqid) not in dict.keys():
+                    if "{qseqid}_vs_{sseqid}".format(qseqid=qseqid, sseqid=sseqid) not in dict.keys() and  \
+                            "{sseqid}_vs_{qseqid}".format(sseqid=sseqid, qseqid=qseqid) not in dict.keys():
                         dict["{qseqid}_vs_{sseqid}".format(qseqid=qseqid, sseqid=sseqid)] = {"qseqid": qseqid,
                             "sseqid": sseqid, "qframe": qframe, "sframe": sframe, "qstart": qstart, "qend": qend,
                             "sstart": sstart, "send": send, "pident": pident, "length": length}
-
-                #elif "-" not in qframe and "-" in sframe:
-                #    dict["{qseqid}_vs_{sseqid}".format(qseqid=qseqid, sseqid=sseqid)] = {"qseqid": qseqid,
-                #         "sseqid": sseqid, "qframe": qframe, "sframe": sframe, "qstart": qstart, "qend": qend,
-                #         "sstart": sstart, "send": send, "pident": pident, "length": length}
 
 
 def write_tab(out, dict):
