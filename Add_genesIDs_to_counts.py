@@ -12,8 +12,9 @@ args = parser.parse_args()
 
 def read_tab(samples, tab, dict):
     first_line = tab.readline().strip().split(",")
-    for sample in first_line[1:]:
-        samples.append("{sample}".format(sample=sample))
+    for sample in first_line:
+        if "IDs" not in sample:
+            samples.append("{sample}".format(sample=sample))
     for line in tab:
         description = line.strip().split(",")
         Trans_IDs, counts = description[0], description[1:]
