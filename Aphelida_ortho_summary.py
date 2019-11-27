@@ -4,8 +4,6 @@ except ImportError:
     print("Please check if module 'argparse' is installed")
     quit()
 
-from collections import Counter
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--ortho', type=argparse.FileType('r'), required=True,
                     help="Orthogroups.csv")
