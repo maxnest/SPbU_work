@@ -14,9 +14,11 @@ def table_parsing(tab, pep_dict):
     for line in tab:
         if not line.startswith("ID"):
             description = line.strip().split("\t")
-            pep_ID, seq, family = description[0], description[1].replace(" ", "").replace("/", ""), \
-                                  description[4].replace(" ", "_").replace("/", "_")
-            pep_dict["{Family}|{ID}".format(Family=family, ID=pep_ID)] = seq
+            pep_ID, seq, family, pep_description = description[0], description[1].replace(" ", "").replace("/", ""), \
+                                                   description[4].replace(" ", "_").replace("/", "_"), \
+                                                   description[5].replace(" ", "_").replace("/", "_")
+            pep_dict["{Family}|{ID} {pep_description}".format(Family=family, ID=pep_ID,
+                                                              pep_description=pep_description)] = seq
     print("Input table includes {count} sequences".format(count=len(pep_dict.keys())))
 
 
