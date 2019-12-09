@@ -16,6 +16,7 @@ parser.add_argument('--domains', type=argparse.FileType('r'), required=True)
 parser.add_argument('--blast_swiss', type=argparse.FileType('r'), required=True)
 parser.add_argument('--blast_nt', type=argparse.FileType('r'), required=True)
 parser.add_argument('--blast_nr', type=argparse.FileType('r'), required=True)
+parser.add_argument('--neuropep', type=argparse.FileType('r'), required=True)
 parser.add_argument('--eggnog', type=argparse.FileType('r'), required=True)
 parser.add_argument('--externa_jongeneel', type=argparse.FileType('r'), required=True)
 parser.add_argument('--growing_jongeneel', type=argparse.FileType('r'), required=True)
@@ -46,7 +47,8 @@ def nucl_parsing(contig_dict, nucl_fasta):
                                "EggNOG:BRITE": [], "EggNOG:KEGG_TC": [], "EggNOG:CAZy": [], "EggNOG:BiGG_Reaction": [],
                                "EggNOG:OG": [], "EggNOG:COG_cat": [], "EggNOG:Description": [],
                                "Anno_swiss": {"hit": [], "identity": []}, "Anno_nt": {"hit": [], "identity": []},
-                               "Anno_nr": {"hit": [], "identity": []}, "Ortho": [], "ExSec": [], "Specificity": [],
+                               "Anno_nr": {"hit": [], "identity": []}, "Anno_neuropep": {"hit": [], "identity": []},
+                               "Ortho": [], "ExSec": [], "Specificity": [],
                                "Whole_vs_Externa": [], "Whole_vs_Growing": [], "Whole_vs_Middle": [],
                                "Whole_vs_Terminal": [], "Growing_vs_Middle": [], "Growing_vs_Terminal": [],
                                "Middle_vs_Terminal": [], "Externa_vs_Growing": [], "Externa_vs_Middle": [],
@@ -111,7 +113,7 @@ def BLAST_annotation(contig_dict, BLAST, key_tag):
     head = BLAST.readline()
     for line in BLAST:
         description = line.strip().split("\t")
-        if key_tag == "swiss" or key_tag == "nr":
+        if key_tag == "swiss" or key_tag == "nr" or key_tag == "neuropep":
             ID, hit_name = description[0].strip().split(".p")[0], description[3]
         else:
             ID, hit_name = description[0].strip().split(" ")[0], description[3]
@@ -124,7 +126,7 @@ def BLAST_annotation(contig_dict, BLAST, key_tag):
                 contig_dict[ID]["Anno_{key}".format(key=key_tag)]["hit"].append(description[4])
                 contig_dict[ID]["Anno_{key}".format(key=key_tag)]["identity"].append(description[9])
 
-    if key_tag == "swiss" or key_tag == "nr":
+    if key_tag == "swiss" or key_tag == "nr" or key_tag == "neuropep":
         for contig in contig_dict.keys():
             if contig_dict[contig]["amino"] == "without ORF":
                 contig_dict[contig]["Anno_{key}".format(key=key_tag)]["hit"].append("-")
@@ -164,11 +166,12 @@ def LFC_for_significant(contig_dict, table, tag):
 def write_output(contig_dict, out):
     with open("{out}.tsv".format(out=out), 'a') as output:
         output.write("### Contig_ID - ID of assembled supercontig\n"
-                     "### Orthogroups - ID of the orthogroup constructed for analyzed Crustacea species"
+                     "### Orthogroups - ID of the orthogroup constructed for analyzed Crustacea species\n"
                      "### NCBInt - best hit with NCBI nucleotide database\n"
                      "### NCBInr - best hit with NCBI non-redundant protein database\n"
                      "### SwissProt - best hit with SwissProt protein database\n"
-                     "### NCBInt|NCBInr|SwissProt_identity - best hit identity percentage\n"
+                     "### NeuroPep - best hit with neuropeptide database\n"
+                     "### NCBInt|NCBInr|SwissProt|NeuroPep_identity - best hit identity percentage\n"
                      "### Domain_arch - reconstructed protein architecture based on analysis "
                      " of comparison results with a PfamA database\n"
                      "### EggNOG:Preferred_name - Predicted gene name\n"
@@ -195,33 +198,41 @@ def write_output(contig_dict, out):
                      "### LFC:Externa_vs_Growing|Middle|Terminal - expression Log2 Fold Change between Externa and "
                      "Growing|Middle|Terminal part of stolon, respectively\n"
                      "Contig_ID\tOrthogroup\tNCBInt\tNCBInt_identity\tNCBInr\tNCBInr_identity\t"
-                     "SwissProt\tSwissProt_identity\tDomain_arch\tEggNOG:GO_terms\tEggNOG:EC_number\t"
+                     "SwissProt\tSwissProt_identity\tNeuroPep\tNeuroPep_identity\tDomain_arch\tEggNOG:GO_terms\t"
+                     "EggNOG:EC_number\t"
                      "EggNOG:KEGG_KO\tEggNOG:KEGG_Pathway\tEggNOG:KEGG_Module\tEggNOG:KEGG_Reaction\t"
                      "EggNOG:rclass\tEggNOG:BRITE\tEggNOG:KEGG_TC\tEggNOG:CAZy\tEggNOG:BiGG_Reaction\t"
-                     "EggNOG:OG\tEggNOG:COG_cat\tEggNOG:Description\tExSec\tSpecificity\tLFC:Whole_vs_Externa\t"
+                     "EggNOG:OG\tEggNOG:COG_cat\tEggNOG:Description\tExSec\tSpecificity\t"
+                     "LFC:Whole_vs_Externa\t"
                      "LFC:Whole_vs_Growing\tLFC:Whole_vs_Middle\tLFC:Whole_vs_Terminal\tLFC:Growing_vs_Middle\t"
                      "LFC:Growing_vs_Terminal\tLFC:Middle_vs_Terminal\tLFC:Externa_vs_Growing\tLFC:Externa_vs_Middle\t"
                      "LFC:Externa_vs_Terminal\n")
         for contig, values in contig_dict.items():
             output.write("{id}\t{ortho}\t{nt}\t{nt_identity}\t{nr}\t{nr_identity}\t{swiss}\t{swiss_identity}\t"
-                         "{domains}\t{go}\t{ec}\t{ko}\t{pathway}\t{module}\t{reaction}\t{rclass}\t{brite}\t"
-                         "{tc}\t{cazy}\t{bigg}\t{og}\t{cog}\t{description}\t{exsec}\t{specificity}\t"
-                         "{whole_vs_externa}\t{whole_vs_growing}\t{whole_vs_middle}\t{whole_vs_terminal}\t"
-                         "{growing_vs_middle}\t{growing_vs_terminal}\t{middle_vs_terminal}\t{externa_vs_growing}\t"
-                         "{externa_vs_middle}\t{externa_vs_terminal}\n".format(id=contig, ortho=values["Ortho"][0],
-                          nt=values["Anno_nt"]["hit"][0], nt_identity=values["Anno_nt"]["identity"][0],
+                         "{neuropep}\t{neuropep_identity}\t{domains}\t{go}\t{ec}\t{ko}\t{pathway}\t{module}\t"
+                         "{reaction}\t{rclass}\t{brite}\t{tc}\t{cazy}\t{bigg}\t{og}\t{cog}\t{description}\t{exsec}\t"
+                         "{specificity}\t{whole_vs_externa}\t{whole_vs_growing}\t{whole_vs_middle}\t"
+                         "{whole_vs_terminal}\t{growing_vs_middle}\t{growing_vs_terminal}\t{middle_vs_terminal}\t"
+                         "{externa_vs_growing}\t{externa_vs_middle}\t{externa_vs_terminal}\n".format(id=contig,
+                          ortho=values["Ortho"][0], nt=values["Anno_nt"]["hit"][0],
+                          nt_identity=values["Anno_nt"]["identity"][0],
                           nr=values["Anno_nr"]["hit"][0], nr_identity=values["Anno_nr"]["identity"][0],
                           swiss=values["Anno_swiss"]["hit"][0], swiss_identity=values["Anno_swiss"]["identity"][0],
+                          neuropep=values["Anno_neuropep"]["hit"][0],
+                          neuropep_identity=values["Anno_neuropep"]["identity"][0],
                           domains="|".join(values["domains"]), go=values["EggNOG:GO_terms"][0],
                           ec=values["EggNOG:EC_number"][0], ko=values["EggNOG:KEGG_KO"][0],
                           pathway=values["EggNOG:KEGG_Pathway"][0], module=values["EggNOG:KEGG_Module"][0],
                           reaction=values["EggNOG:KEGG_Reaction"][0], rclass=values["EggNOG:rclass"][0],
-                          brite=values["EggNOG:BRITE"][0], tc=values["EggNOG:KEGG_TC"][0], cazy=values["EggNOG:CAZy"][0],
+                          brite=values["EggNOG:BRITE"][0], tc=values["EggNOG:KEGG_TC"][0],
+                          cazy=values["EggNOG:CAZy"][0],
                           bigg=values["EggNOG:BiGG_Reaction"][0], og=values["EggNOG:OG"][0],
                           cog=values["EggNOG:COG_cat"][0], description=values["EggNOG:Description"][0],
                           exsec=values["ExSec"][0], specificity=values["Specificity"][0],
-                          whole_vs_externa=values["Whole_vs_Externa"][0], whole_vs_growing=values["Whole_vs_Growing"][0],
-                          whole_vs_middle=values["Whole_vs_Middle"][0], whole_vs_terminal=values["Whole_vs_Terminal"][0],
+                          whole_vs_externa=values["Whole_vs_Externa"][0],
+                          whole_vs_growing=values["Whole_vs_Growing"][0],
+                          whole_vs_middle=values["Whole_vs_Middle"][0],
+                          whole_vs_terminal=values["Whole_vs_Terminal"][0],
                           growing_vs_middle=values["Growing_vs_Middle"][0],
                           growing_vs_terminal=values["Growing_vs_Terminal"][0],
                           middle_vs_terminal=values["Middle_vs_Terminal"][0],
@@ -248,6 +259,7 @@ if __name__ == "__main__":
         BLAST_annotation(contig_dict, args.blast_swiss, "swiss")
         BLAST_annotation(contig_dict, args.blast_nt, "nt")
         BLAST_annotation(contig_dict, args.blast_nr, "nr")
+        BLAST_annotation(contig_dict, args.neuropep, "neuropep")
         print("***** Domain architecture parsing *****")
         domains_parsing(contig_dict, args.domains)
         print("***** Specificity searching output files parsing *****")
