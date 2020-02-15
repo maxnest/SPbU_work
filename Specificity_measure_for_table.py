@@ -14,6 +14,7 @@ args = parser.parse_args()
 
 def table_parsing(table, header, contig_dict):
     header.extend(table.readline().strip().split("\t"))
+    print("Samples: {header}".format(header=" ".join(header[1:])))
     for line in table:
         description = line.strip().split("\t")
         contig_ID, values = description[0], description[1:]
@@ -25,9 +26,13 @@ def table_parsing(table, header, contig_dict):
 def specificity(header, contig_dict, out):
     for sample in header[1:]:
         other_samples = [other_sample for other_sample in header[1:] if other_sample != sample]
+        print("Sample: {sample}; Other samples: {other}".format(sample=sample, other=" ".join(other_samples)))
         with open("{out}.{sample}_associated_set.txt".format(out=out, sample=sample), 'a') as output:
             for contig, values in contig_dict.items():
                 if values[sample] > np.sum([values[other_sample] for other_sample in other_samples]):
+                    # print("{sample} > {sum}".format(sample=values[sample],
+                    #                                sum=np.sum([values[other_sample] for
+                    #                                            other_sample in other_samples])))
                     output.write("{contig}\n".format(contig=contig))
 
 
