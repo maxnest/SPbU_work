@@ -16,7 +16,7 @@ parser.add_argument('--blast_swiss', type=argparse.FileType('r'), required=True)
 parser.add_argument('--blast_nt', type=argparse.FileType('r'), required=True)
 parser.add_argument('--blast_nr', type=argparse.FileType('r'), required=True)
 parser.add_argument('--eggnog', type=argparse.FileType('r'), required=True)
-parser.add_argument('--averaged_tpm', type=argparse.FileType('r'), required=True)
+parser.add_argument('--scaled_tpm', type=argparse.FileType('r'), required=True)
 parser.add_argument('--rediae_specific', type=argparse.FileType('r'), required=True)
 parser.add_argument('--cercariae_specific', type=argparse.FileType('r'), required=True)
 parser.add_argument('--marita_specific', type=argparse.FileType('r'), required=True)
@@ -37,7 +37,7 @@ def nucl_parsing(contig_dict, nucl_fasta):
                                              "EggNOG:KEGG_Reaction": [], "EggNOG:rclass": [], "EggNOG:BRITE": [],
                                              "EggNOG:KEGG_TC": [], "EggNOG:CAZy": [], "EggNOG:BiGG_Reaction": [],
                                              "EggNOG:OG": [], "EggNOG:COG_cat": [], "EggNOG:Description": [],
-                                             "Rediae_TPM": 0, "Cercariae_TPM": 0, "Marita_TPM": 0,
+                                             "Rediae_scaledTPM": 0, "Cercariae_scaledTPM": 0, "Marita_scaledTPM": 0,
                                              "Rediae_specific": [], "Cercaria_specific": [], "Marita_specific": [],
                                              "Cluster": [], "Ortho": []}
 
@@ -161,14 +161,14 @@ def expression(contig_dict, table):
     for line in table:
         description = line.strip().split("\t")
         contig, red, cer, mar = description[0], float(description[1]), float(description[2]), float(description[3])
-        contig_dict[contig]["Rediae_TPM"] += red
-        contig_dict[contig]["Cercariae_TPM"] += cer
-        contig_dict[contig]["Marita_TPM"] += mar
+        contig_dict[contig]["Rediae_scaledTPM"] += red
+        contig_dict[contig]["Cercariae_scaledTPM"] += cer
+        contig_dict[contig]["Marita_scaledTPM"] += mar
 
 
 def write_output_files(contig_dict, output):
     with open("{output}.tsv".format(output=output), 'a') as output_file:
-        output_file.write("### Contig_ID - ID of assembled supercontig\n"
+        output_file.write("### Contig_ID - ID of assembled and selected contig\n"
                           "### Orthogroup - ID of the orthogroup group in which the sequence was included\n"
                           "### NCBInt - best hit with NCBI nucleotide database\n"
                           "### NCBInr - best hit with NCBI non-redundant protein database\n"
@@ -191,19 +191,19 @@ def write_output_files(contig_dict, output):
                           "### EggNOG:OG - comma delimited list of matching eggNOG Orthologous Groups\n"
                           "### EggNOG:COG_cat - COG functional category inferred from best matching OG\n"
                           "### EggNOG:Description - eggNOG functional description inferred from best matching OG\n"
-                          "### Rediae|Cercariae|Marita averaged TPM - the value of expression in rediae, "
-                          "cercariae or adult worm stages, respectively, averaged between two biological replicates "
-                          "in TPM (Transcripts Per Million) units\n"
-                          "### Rediae|Cercariae|Marita-specific - the sequence was attributed to rediae, "
+                          "### Rediae|Cercariae|Marita_scaledTPM - the value of expression in rediae, cercariae "
+                          "or adult worm stages, respectively, in TPM (Transcripts Per Million) units "
+                          "which were between-sample normalized and averaged between two biological replicates\n"
+                          "### Rediae|Cercariae|Marita-specific - '*' means that the sequence was attributed to rediae,"
                           "cercariae or adult worm stage specific gene set, respectively, according to Jongeneel`s "
                           "specificity measure\n"
-                          "### Cluster - Cluster ID of co-expressed genes\n")
+                          "### Cluster - co-expressed gene cluster identifier\n")
         output_file.write("Contig_ID\tOrthogroup\tEggNOG:Preferred_name\tNCBInt\tNCBInt_identity\tNCBInr\tNCBInr_identity\t"
                           "SwissProt\tSwissProt_identity\tDomains_arch\tEggNOG:GO_terms\tEggNOG:EC_number\t"
                           "EggNOG:KEGG_KO\tEggNOG:KEGG_Pathway\tEggNOG:KEGG_Module\tEggNOG:KEGG_Reaction\t"
                           "EggNOG:rclass\tEggNOG:BRITE\tEggNOG:KEGG_TC\tEggNOG:CAZy\tEggNOG:BiGG_Reaction\t"
-                          "EggNOG:OG\tEggNOG:COG_cat\tEggNOG:Description\tRediae averaged TPM\tCercariae averaged TPM\t"
-                          "Marita averaged TPM\tRediae-specific\tCercariae-specific\t"
+                          "EggNOG:OG\tEggNOG:COG_cat\tEggNOG:Description\tRediae_scaledTPM\tCercariae_scaledTPM\t"
+                          "Marita_scaledTPM\tRediae-specific\tCercariae-specific\t"
                           "Marita-specific\tCluster\n")
         for contig, values in contig_dict.items():
             output_file.write("{contig}\t{ortho}\t{name}\t{nt}\t{nt_identity}\t{nr}\t{nr_identity}\t{swiss}\t"
@@ -223,8 +223,8 @@ def write_output_files(contig_dict, output):
                                tc=values["EggNOG:KEGG_TC"][0], cazy=values["EggNOG:CAZy"][0],
                                bigg=values["EggNOG:BiGG_Reaction"][0], og=values["EggNOG:OG"][0],
                                cog=values["EggNOG:COG_cat"][0], description=values["EggNOG:Description"][0],
-                               red_tpm=values["Rediae_TPM"], cer_tpm=values["Cercariae_TPM"],
-                               mar_tpm=values["Marita_TPM"], red_spec=values["Rediae_specific"][0],
+                               red_tpm=values["Rediae_scaledTPM"], cer_tpm=values["Cercariae_scaledTPM"],
+                               mar_tpm=values["Marita_scaledTPM"], red_spec=values["Rediae_specific"][0],
                                cer_spec=values["Cercaria_specific"][0], mar_spec=values["Marita_specific"][0],
                                cluster=values["Cluster"][0]))
 
@@ -247,7 +247,7 @@ if __name__ == "__main__":
     print("***** Cluster parsing *****")
     clusters(contig_dict, args.clusters, clusters_dict)
     print("***** Table with averaged expression values parsing *****")
-    expression(contig_dict, args.averaged_tpm)
+    expression(contig_dict, args.scaled_tpm)
     print("***** Files with IDs of stage-specific sequences parsing *****")
     specificity(contig_dict, args.rediae_specific, "Rediae")
     specificity(contig_dict, args.cercariae_specific, "Cercaria")
