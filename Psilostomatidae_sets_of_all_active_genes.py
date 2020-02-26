@@ -17,13 +17,13 @@ def table_parsing(table, rediae, cercariae, marita):
         description = line.strip().split("\t")
         contig_ID, red_tpm, cer_tpm, mar_tpm = description[0], float(description[1]), float(description[2]), \
                                                float(description[3])
-        if red_tpm > 0:
+        if red_tpm >= 1:
             rediae.append(contig_ID)
 
-        if cer_tpm > 0:
+        if cer_tpm >= 1:
             cercariae.append(contig_ID)
 
-        if mar_tpm > 0:
+        if mar_tpm >= 1:
             marita.append(contig_ID)
 
 
