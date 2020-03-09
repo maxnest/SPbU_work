@@ -23,19 +23,20 @@ def BLAST_parsing(BLAST, sp_dict):
 
 
 def RBBH_pairs_searching(sp1_dict, sp2_dict, pairs_dict):
-    pairs = 0
+    number = 1
     for sp1_id, sp1_hit in sp1_dict.items():
         if sp1_hit in sp2_dict.keys() and sp2_dict[sp1_hit] == sp1_id:
-            pairs_dict[sp1_id] = sp1_hit
-            pairs += 1
-    print("***** {pairs} pairs of RBBH pairs are founded *****".format(pairs=pairs))
+            pairs_dict["RBBH_pair_{num}".format(num=number)] = {"sp1": sp1_id, "sp2": sp1_hit}
+            #   pairs_dict[sp1_id] = sp1_hit
+            number += 1
+    print("***** {number} pairs of RBBH pairs are founded *****".format(number=len(pairs_dict.keys())))
 
 
 def output_file_creating(pair_dict, sp1_tag, sp2_tag):
     with open("{sp1_tag}_vs_{sp2_tag}.RBBH_pairs.tsv".format(sp1_tag=sp1_tag, sp2_tag=sp2_tag), 'a') as output:
-        output.write("{sp1_tag}\t{sp2_tag}\n".format(sp1_tag=sp1_tag, sp2_tag=sp2_tag))
-        for sp1_id, sp2_id in pair_dict.items():
-            output.write("{sp1_id}\t{sp2_id}\n".format(sp1_id=sp1_id, sp2_id=sp2_id))
+        output.write("RBBH_pair_ID\t{sp1_tag}\t{sp2_tag}\n".format(sp1_tag=sp1_tag, sp2_tag=sp2_tag))
+        for pair, values in pair_dict.items():
+            output.write("{pair}\t{sp1_id}\t{sp2_id}\n".format(pair=pair, sp1_id=values["sp1"], sp2_id=values["sp2"]))
 
 
 if __name__ == "__main__":
