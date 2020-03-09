@@ -4,7 +4,6 @@ except ImportError:
     print("Please check if module 'argparse' is installed")
     quit()
 
-import itertools
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--rbbh_pairs', type=argparse.FileType('r'), required=True)
@@ -40,13 +39,11 @@ def gene_map_parsing(gene_dict, gene_map):
 
 def RBBH_pairs_parsing(rbbh_pairs, pairs_dict):
     header = rbbh_pairs.readline()
-    number = 1
     for line in rbbh_pairs:
         description = line.strip().split("\t")
-        first_sp, second_sp = description[0], description[1]
-        pairs_dict["pair_{num}".format(num=number)] = {"first_sp": first_sp, "second_sp": second_sp,
-                                                       "first_specificity": [], "second_specificity": []}
-        number += 1
+        pair_ID, first_sp, second_sp = description[0], description[1], description[2]
+        pairs_dict[pair_ID] = {"first_sp": first_sp, "second_sp": second_sp,
+                               "first_specificity": [], "second_specificity": []}
 
 
 def add_specificity(pairs_dict, gene_map, stage_specific_genes, species_tag, stage_tag):
@@ -98,7 +95,7 @@ def output_files_creating(Jaccard_dict, pair_dict, first_tag, second_tag, output
                                 mar_vs_mar=Jaccard_dict["first_M_vs_second_M"]))
 
     with open("{output}.RBBH_pairs_and_specificity.tsv".format(output=output), 'a') as RBBH_output:
-        RBBH_output.write("RBBH_pair\t{first}_seq_ID\t{second}_seq_ID\t{first}_specificity\t{second}_specificity\n".format(
+        RBBH_output.write("RBBH_pair_ID\t{first}_seq_ID\t{second}_seq_ID\t{first}_specificity\t{second}_specificity\n".format(
             first=first_tag, second=second_tag))
         for pair, values in pair_dict.items():
             RBBH_output.write("{pair}\t{first}\t{second}\t{first_specificity}\t{second_specificity}\n".format(
