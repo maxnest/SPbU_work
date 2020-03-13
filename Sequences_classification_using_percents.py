@@ -35,8 +35,9 @@ def classification(percent, sum_exp, gene, sample, samples, out):
 def dict_parsing(contig_dict, out, percent):
     for gene, samples in contig_dict.items():
         gene_sum_exp = np.sum([samples[sample] for sample in samples])
-        for sample in samples:
-            classification(percent, gene_sum_exp, gene, sample, samples, out)
+        if gene_sum_exp > 0:
+            for sample in samples:
+                classification(percent, gene_sum_exp, gene, sample, samples, out)
 
 
 if __name__ == "__main__":
