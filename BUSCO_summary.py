@@ -4,14 +4,20 @@ except ImportError:
     print("Please check if module 'argparse' is installed")
     quit()
 
-import numpy as np
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--busco_all_trinity', type=argparse.FileType('r'), required=True)
-parser.add_argument('--busco_good_trinity', type=argparse.FileType('r'), required=True)
-parser.add_argument('--busco_all_cdhit_sense', type=argparse.FileType('r'), required=True)
-parser.add_argument('--busco_good_cdhit_sense', type=argparse.FileType('r'), required=True)
-parser.add_argument('--busco_good_cdhit_sense_pep', type=argparse.FileType('r'), required=True)
+parser.add_argument('--csinensis', type=argparse.FileType('r'), required=True)
+parser.add_argument('--fgigantica', type=argparse.FileType('r'), required=True)
+parser.add_argument('--fhepatica', type=argparse.FileType('r'), required=True)
+parser.add_argument('--ofelineus', type=argparse.FileType('r'), required=True)
+parser.add_argument('--oviverrini', type=argparse.FileType('r'), required=True)
+parser.add_argument('--psimillimum', type=argparse.FileType('r'), required=True)
+parser.add_argument('--shaematobium', type=argparse.FileType('r'), required=True)
+parser.add_argument('--sjaponicum', type=argparse.FileType('r'), required=True)
+parser.add_argument('--smansoni', type=argparse.FileType('r'), required=True)
+parser.add_argument('--spseudoglobulus', type=argparse.FileType('r'), required=True)
+parser.add_argument('--tregenti', type=argparse.FileType('r'), required=True)
+parser.add_argument('--tszidati', type=argparse.FileType('r'), required=True)
 parser.add_argument('--output', type=str, required=True)
 args = parser.parse_args()
 
@@ -22,64 +28,44 @@ def busco_full_tab_parsing(busco_dict, busco_tab, tag):
             description = line.strip().split("\t")
             ID, status = description[0], description[1]
             if ID not in busco_dict.keys():
-                keys = ["status", "sequences", "score"]
-                busco_dict[ID] = {"all_Trinity": {key: [] for key in keys},
-                                  # "all_Trinity" - all assembled sequences (Trinity, before clusterization)
-                                  "good_Trinity": {key: [] for key in keys},
-                                  # "good_Trinity" - only sequences, classified as "good" by TransRate
-                                  "all_cdhit_sense": {key: [] for key in keys},
-                                  # "all_cdhit_sense" - all sequences selected by CDHIT (only +/+ mode)
-                                  "good_cdhit_sense": {key: [] for key in keys},
-                                  # "good_cdhit_sense" - only sequences, classified as "good" by TransRate
-                                  "good_cdhit_sense_pep": {key: [] for key in keys}
-                                  # "good_cdhit_sense_pep" - proteins, predicted on the clustered and selected contigs
-                }
+                busco_dict[ID] = {"csin": [], "fgig": [], "fhep": [], "ofel": [], "oviv": [], "psim": [],
+                                  "shae": [], "sjap": [], "sman": [], "spse": [], "treg": [], "tszi": []}
 
-            if status != "Missing":
-                busco_dict[ID][tag]["status"].append(status)
-                busco_dict[ID][tag]["sequences"].append(description[2])
-                busco_dict[ID][tag]["score"].append(float(description[3]))
-            else:
-                busco_dict[ID][tag]["status"].append(status)
-                busco_dict[ID][tag]["score"].append(0)
+            busco_dict[ID][tag].append(status)
 
 
 def output_writing(busco_dict, output):
-    with open("{output}.tsv".format(output=output), 'a') as output_file:
-        output_file.write("BUSCO ID\tTrinity_all_seq:status\tTrinity_only_good:status\t"
-                          "CDHIT_all_seq:status\tCDHIT_only_good:status\tCDHIT_pep:status\t"
-                          "Trinity_all:min_and_max_scores\tTrinity_only_good:min_and_max_scores\t"
-                          "CDHIT_all_seq:min_and_max_scores\tCDHIT_only_good:min_and_max_scores\t"
-                          "CDHIT_pep:min_and_max_scores\n")
-        for id, values in busco_dict.items():
-            output_file.write("{id}\t{all_status}\t{good_status}\t{cdhit_all_status}\t"
-                              "{cdhit_good_status}\t{cdhit_pep_status}\t{all_scores}\t{good_scores}\t"
-                              "{cdhit_all_scores}\t{cdhit_good_scores}\t{cdhit_pep_scores}\n".format(
-                               id=id, all_status=list(set(values["all_Trinity"]["status"]))[0],
-                               good_status=list(set(values["good_Trinity"]["status"]))[0],
-                               cdhit_all_status=list(set(values["all_cdhit_sense"]["status"]))[0],
-                               cdhit_good_status=list(set(values["good_cdhit_sense"]["status"]))[0],
-                               cdhit_pep_status=list(set(values["good_cdhit_sense_pep"]["status"]))[0],
-                               all_scores="{min}|{max}".format(min=np.min(values["all_Trinity"]["score"]),
-                                                               max=np.max(values["all_Trinity"]["score"])),
-                               good_scores="{min}|{max}".format(min=np.min(values["good_Trinity"]["score"]),
-                                                                max=np.max(values["good_Trinity"]["score"])),
-                               cdhit_all_scores="{min}|{max}".format(min=np.min(values["all_cdhit_sense"]["score"]),
-                                                                     max=np.max(values["all_cdhit_sense"]["score"])),
-                               cdhit_good_scores="{min}|{max}".format(min=np.min(values["good_cdhit_sense"]["score"]),
-                                                                      max=np.max(values["good_cdhit_sense"]["score"])),
-                               cdhit_pep_scores="{min}|{max}".format(
-                                min=np.min(values["good_cdhit_sense_pep"]["score"]),
-                                max=np.max(values["good_cdhit_sense_pep"]["score"]))))
+    keys = ["csin", "fgig", "fhep", "ofel", "oviv", "psim", "shae", "sjap", "sman", "spse", "treg", "tszi"]
+    with open("{output}.busco_summary.tsv".format(output=output), 'a') as output_file:
+        output_file.write("Ortho_ID\tCsinensis_UP000286415\tFgigantica\tFhepatica_UP000230066\t"
+                          "Ofelineus_UP000308267\tOviverrini_UP000054324\tPsimillimum\tShaematobium_UP000054474\t"
+                          "Sjaponicum_UP000311919\tSmansoni_UP000008854\tSpseudoglobulus\tTregenti\tTszidati\n")
+        for ID, values in busco_dict.items():
+            output_file.write("{id}\t{all_status}\n".format(id=ID,
+                                                            all_status="\t".join([values[key][0] for key in keys])))
+
+    with open("{output}.common_missing.tsv".format(output=output), 'a') as common_missing:
+        for ID, values in busco_dict.items():
+            all_status = [values[key][0] for key in keys]
+            if len(set(all_status)) == 1 and "Missing" in set(all_status):
+                common_missing.write("{id}\n".format(id=ID))
 
 
 if __name__ == "__main__":
     busco_dict = {}
     print("***** Input files parsing *****")
-    busco_full_tab_parsing(busco_dict, args.busco_all_trinity, "all_Trinity")
-    busco_full_tab_parsing(busco_dict, args.busco_good_trinity, "good_Trinity")
-    busco_full_tab_parsing(busco_dict, args.busco_all_cdhit_sense, "all_cdhit_sense")
-    busco_full_tab_parsing(busco_dict, args.busco_good_cdhit_sense, "good_cdhit_sense")
-    busco_full_tab_parsing(busco_dict, args.busco_good_cdhit_sense_pep, "good_cdhit_sense_pep")
+    busco_full_tab_parsing(busco_dict, args.csinensis, "csin")
+    busco_full_tab_parsing(busco_dict, args.fgigantica, "fgig")
+    busco_full_tab_parsing(busco_dict, args.fhepatica, "fhep")
+    busco_full_tab_parsing(busco_dict, args.ofelineus, "ofel")
+    busco_full_tab_parsing(busco_dict, args.oviverrini, "oviv")
+    busco_full_tab_parsing(busco_dict, args.psimillimum, "psim")
+    busco_full_tab_parsing(busco_dict, args.shaematobium, "shae")
+    busco_full_tab_parsing(busco_dict, args.sjaponicum, "sjap")
+    busco_full_tab_parsing(busco_dict, args.smansoni, "sman")
+    busco_full_tab_parsing(busco_dict, args.spseudoglobulus, "spse")
+    busco_full_tab_parsing(busco_dict, args.tregenti, "treg")
+    busco_full_tab_parsing(busco_dict, args.tszidati, "tszi")
     print("***** Output file creating *****")
     output_writing(busco_dict, args.output)
+
