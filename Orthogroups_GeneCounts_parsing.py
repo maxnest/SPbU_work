@@ -23,7 +23,11 @@ def short_name_parsing(species_tag, tag_dict):
 
 
 def orthogroups_parsing(orthogroups, species_list, tag_dict, ortho_dict):
-    species_list.extend(orthogroups.readline().strip().split("\t")[:-1])
+    #   species_list.extend(orthogroups.readline().strip().split("\t")[:-1])
+    header = orthogroups.readline().strip().split("\t")[:-1]
+    for species in header:
+        if species != "Orthogroup":
+            species_list.append(species)
     # print(species_list)
     print("Species: {species_list}".format(species_list="\t".join(species_list)))
     for line in orthogroups:
