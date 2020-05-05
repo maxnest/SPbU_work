@@ -49,7 +49,7 @@ def orthogroups_parsing(gene_dict, prot_2_gene_dict, orthogroups):
         description = line.strip().split("\t")
         group_ID, proteins = description[0], description[1:]
         for protein_list in proteins:
-            for protein in protein_list.split(","):
+            for protein in protein_list.split(", "):
                 if protein in prot_2_gene_dict.keys():
                     gene_dict[prot_2_gene_dict[protein]]["Ortho"].append(group_ID)
 
