@@ -40,9 +40,11 @@ def gene_map_parsing(gene_dict, gene_map):
         description = line.strip().split("\t")
         gene_ID, transcript_ID, protein_ID = description[0], description[1], description[2]
         gene_dict[gene_ID] = {"transcript": transcript_ID, "protein": protein_ID,
-                              "domains": [], "Anno_swiss": {"hit": [], "identity": []},
+                              "domains": [],
+                              "Anno_swiss": {"hit": [], "identity": []},
                               "Anno_nt": {"hit": [], "identity": []},
-                              "Anno_nr": {"hit": [], "identity": []}, "Anno_neuropep": {"hit": [], "identity": []},
+                              "Anno_nr": {"hit": [], "identity": []},
+                              "Anno_neuropep": {"hit": [], "identity": []},
                               "EggNOG:Preferred_name": [], "EggNOG:GO_terms": [], "EggNOG:EC_number": [],
                               "EggNOG:KEGG_KO": [], "EggNOG:KEGG_Pathway": [], "EggNOG:KEGG_Module": [],
                               "EggNOG:KEGG_Reaction": [], "EggNOG:rclass": [], "EggNOG:BRITE": [],
@@ -163,8 +165,8 @@ def write_output_files(gene_dict, output):
                           "EggNOG:KEGG_KO\tEggNOG:KEGG_Pathway\tEggNOG:KEGG_Module\tEggNOG:KEGG_Reaction\t"
                           "EggNOG:rclass\tEggNOG:BRITE\tEggNOG:KEGG_TC\tEggNOG:CAZy\tEggNOG:BiGG_Reaction\t"
                           "EggNOG:OG\tEggNOG:COG_cat\tEggNOG:Description\tExterna_scaledTPM\t"
-                          "Growing_trunk_scaledTPM\tMain_trunk_part_scaledTPM\tThoracic_part_of_interna\t"
-                          "Whole_body_scaledTPM\tSpecificity\tMolecular_markers\tSecretory\Excretory\n")
+                          "Growing_trunk_scaledTPM\tMain_trunk_part_scaledTPM\tThoracic_part_of_interna_scaledTPM\t"
+                          "Whole_body_scaledTPM\tSpecificity\tMolecular_markers\tSecretory\Excretory_sequences\n")
         for gene, values in gene_dict.items():
             output_file.write("{gene}\t{trans}\t{prot}\t{ortho}\t{name}\t{nt}\t{nt_identity}\t{nr}\t{nr_identity}\t"
                               "{swiss}\t{swiss_identity}\t{neuro}\t{neuro_identity}\t{domains}\t{go}\t"
@@ -209,7 +211,7 @@ if __name__ == "__main__":
     BLAST_annotation(gene_dict, prot_2_gene_dict, trans_2_gene_dict, args.neuropep, "neuropep")
     print("***** Domain architecture parsing *****")
     domains_parsing(gene_dict, prot_2_gene_dict, args.domains)
-    print("***** Files with IDs of sequences with specific expression patterns parsing *****")
+    print("***** Files with IDs of sequences with preferential expression patterns parsing *****")
     specificity(gene_dict, args.externa_specific, "Externa")
     specificity(gene_dict, args.growing_specific, "Growing_trunk")
     specificity(gene_dict, args.middle_specific, "Main_trunk_part")
@@ -228,11 +230,11 @@ if __name__ == "__main__":
             values["Markers"].append('-')
     print("***** Table with averaged expression values parsing *****")
     expression(gene_dict, args.scaled_tpm)
-    print("***** Parsing of fasta-files with exsec sequences *****")
+    print("***** Parsing of fasta-files with excretory/secretory sequences *****")
     classic_seqs = SeqIO.parse(args.classic_exsec, "fasta")
     nonclassic_seqs = SeqIO.parse(args.nonclassic_exsec, "fasta")
-    exsec_parsing(gene_dict, classic_seqs, prot_2_gene_dict, "Classic")
-    exsec_parsing(gene_dict, nonclassic_seqs, prot_2_gene_dict, "Nonclassic")
+    exsec_parsing(gene_dict, classic_seqs, prot_2_gene_dict, "Potential_classical")
+    exsec_parsing(gene_dict, nonclassic_seqs, prot_2_gene_dict, "Potential_nonclassical")
     for gene, values in gene_dict.items():
         if len(values["ExSec"]) == 0:
             values["ExSec"].append('-')
