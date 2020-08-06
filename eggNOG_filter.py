@@ -13,8 +13,10 @@ parser.add_argument('--exclude', type=argparse.FileType('r'), required=True,
                     help="Text file with list of taxons (one per line) that should be excluded")
 parser.add_argument('--map', type=argparse.FileType('r'), required=True,
                     help="Table with map of IDs: gene transcript protein")
-parser.add_argument('--exp', type=argparse.FileType('r'), required=True,
-                    help="Table with expression values")
+parser.add_argument('--unaveraged_exp', type=argparse.FileType('r'), required=True,
+                    help="Table with unaveraged expression values")
+parser.add_argument('--averaged_exp', type=argparse.FileType('r'), required=True,
+                    help="Table with averaged expression values")
 parser.add_argument('--transcripts', type=argparse.FileType('r'), required=True,
                     help="Fasta file with nucleotide sequences")
 parser.add_argument('--proteins', type=argparse.FileType('r'), required=True,
@@ -52,9 +54,9 @@ def map_parsing_and_filtering(map, list_of_excluded, eggnog_dict, map_dict, outp
                                                                         protein=products["protein"]))
 
 
-def expression_parsing_and_filtering(exp, map_dict, output):
+def expression_parsing_and_filtering(exp, map_dict, output, tag):
     header = exp.readline().strip().split("\t")
-    with open("{output}.eggnog_filter.averaged_scaledTPM.tsv".format(output=output), 'a') as output_exp:
+    with open("{output}.eggnog_filter.{tag}.tsv".format(output=output, tag=tag), 'a') as output_exp:
         output_exp.write("{header}\n".format(header="\t".join(header)))
         for line in exp:
             description = line.strip().split("\t")
@@ -82,6 +84,7 @@ if __name__ == "__main__":
     print("These taxons will be excluded: {excluded}".format(excluded="\t".join(list_of_excluded)))
     print("***** Filter applying *****")
     map_parsing_and_filtering(args.map, list_of_excluded, eggnog_dict, map_dict, args.output)
-    expression_parsing_and_filtering(args.exp, map_dict, args.output)
+    expression_parsing_and_filtering(args.unaveraged_exp, map_dict, args.output, "unaveraged_TPMs")
+    expression_parsing_and_filtering(args.averaged_exp, map_dict, args.output, "averaged_TPMs")
     fasta_parser(args.transcripts, "nucl", map_dict, args.output)
     fasta_parser(args.proteins, "prot", map_dict, args.output)
