@@ -17,17 +17,12 @@ parser.add_argument('--blast_nt', type=argparse.FileType('r'), required=True)
 parser.add_argument('--blast_nr', type=argparse.FileType('r'), required=True)
 parser.add_argument('--neuropep', type=argparse.FileType('r'), required=True)
 parser.add_argument('--eggnog', type=argparse.FileType('r'), required=True)
-parser.add_argument('--scaled_tpm', type=argparse.FileType('r'), required=True)
-parser.add_argument('--externa_specific', type=argparse.FileType('r'), required=True)
-parser.add_argument('--growing_specific', type=argparse.FileType('r'), required=True)
-parser.add_argument('--middle_specific', type=argparse.FileType('r'), required=True)
-parser.add_argument('--terminal_specific', type=argparse.FileType('r'), required=True)
-parser.add_argument('--whole_body_specific', type=argparse.FileType('r'), required=True)
-parser.add_argument('--externa_markers', type=argparse.FileType('r'), required=True)
-parser.add_argument('--growing_markers', type=argparse.FileType('r'), required=True)
-parser.add_argument('--middle_markers', type=argparse.FileType('r'), required=True)
-parser.add_argument('--terminal_markers', type=argparse.FileType('r'), required=True)
-parser.add_argument('--whole_body_markers', type=argparse.FileType('r'), required=True)
+parser.add_argument('--expression', type=argparse.FileType('r'), required=True)
+parser.add_argument('--externa_overexp', type=argparse.FileType('r'), required=True)
+parser.add_argument('--growing_overexp', type=argparse.FileType('r'), required=True)
+parser.add_argument('--middle_overexp', type=argparse.FileType('r'), required=True)
+parser.add_argument('--terminal_overexp', type=argparse.FileType('r'), required=True)
+parser.add_argument('--whole_body_overexp', type=argparse.FileType('r'), required=True)
 parser.add_argument('--classic_exsec', type=argparse.FileType('r'), required=True)
 parser.add_argument('--nonclassic_exsec', type=argparse.FileType('r'), required=True)
 parser.add_argument('--output', type=str, required=True)
@@ -50,9 +45,9 @@ def gene_map_parsing(gene_dict, gene_map):
                               "EggNOG:KEGG_Reaction": [], "EggNOG:rclass": [], "EggNOG:BRITE": [],
                               "EggNOG:KEGG_TC": [], "EggNOG:CAZy": [], "EggNOG:BiGG_Reaction": [],
                               "EggNOG:OG": [], "EggNOG:COG_cat": [], "EggNOG:Description": [],
-                              "Externa_scaledTPM": 0, "Growing_scaledTPM": 0, "Middle_scaledTPM": 0,
-                              "Terminal_scaledTPM": 0, "Whole_body_scaledTPM": 0,
-                              "Specificity": [], "Markers": [], "Ortho": [], "ExSec": []}
+                              "Externa_TPMs": 0, "Growing_TPMs": 0, "Middle_TPMs": 0,
+                              "Terminal_TPMs": 0, "Whole_body_TPMs": 0,
+                              "Over-expression": [], "Ortho": [], "ExSec": []}
 
 
 def orthogroups_parsing(gene_dict, prot_2_gene_dict, orthogroups):
@@ -124,30 +119,26 @@ def domains_parsing(gene_dict, prot_2_gene_dict, domains):
             gene_dict[gene]["domains"].append("-")
 
 
-def specificity(gene_dict, table, tag):
+def RNentropy_parsing(gene_dict, table, tag):
+    header = table.readline()
     for line in table:
-        gene = line.strip()
-        gene_dict[gene]["Specificity"].append(tag)
+        description = line.strip().split("\t")
+        gene = description[0][1:-1]
+        gene_dict[gene]["Over-expression"].append(tag)
 
 
-def markers(gene_dict, table, tag):
-    for line in table:
-        gene = line.strip()
-        gene_dict[gene]["Markers"].append(tag)
-
-
-def expression(gene_dict, table):
+def expression_parsing(gene_dict, table):
     header = table.readline()
     for line in table:
         description = line.strip().split("\t")
         gene, externa, growing, middle, terminal, whole_body = \
             description[0], float(description[1]), float(description[2]), float(description[3]), \
             float(description[4]), float(description[5])
-        gene_dict[gene]["Externa_scaledTPM"] += externa
-        gene_dict[gene]["Growing_scaledTPM"] += growing
-        gene_dict[gene]["Middle_scaledTPM"] += middle
-        gene_dict[gene]["Terminal_scaledTPM"] += terminal
-        gene_dict[gene]["Whole_body_scaledTPM"] += whole_body
+        gene_dict[gene]["Externa_TPMs"] += externa
+        gene_dict[gene]["Growing_TPMs"] += growing
+        gene_dict[gene]["Middle_TPMs"] += middle
+        gene_dict[gene]["Terminal_TPMs"] += terminal
+        gene_dict[gene]["Whole_body_TPMs"] += whole_body
 
 
 def exsec_parsing(gene_dict, exsec_seqs, prot_2_gene_dict, tag):
@@ -164,15 +155,16 @@ def write_output_files(gene_dict, output):
                           "Domains_arch\tEggNOG:GO_terms\tEggNOG:EC_number\t"
                           "EggNOG:KEGG_KO\tEggNOG:KEGG_Pathway\tEggNOG:KEGG_Module\tEggNOG:KEGG_Reaction\t"
                           "EggNOG:rclass\tEggNOG:BRITE\tEggNOG:KEGG_TC\tEggNOG:CAZy\tEggNOG:BiGG_Reaction\t"
-                          "EggNOG:OG\tEggNOG:COG_cat\tEggNOG:Description\tExterna_scaledTPM\t"
-                          "Growing_trunk_scaledTPM\tMain_trunk_part_scaledTPM\tThoracic_part_of_interna_scaledTPM\t"
-                          "Whole_body_scaledTPM\tSpecificity\tMolecular_markers\tSecretory\Excretory_sequences\n")
+                          "EggNOG:OG\tEggNOG:COG_cat\tEggNOG:Description\tExterna_averaged_TPMs\t"
+                          "Growing_trunk_averaged_TPMs\tMain_trunk_part_averaged_TPMs\t"
+                          "Thoracic_part_of_interna_averaged_TPMs\tWhole_body_averaged_TPM\t"
+                          "Over-expression\tSecretory\Excretory_sequences\n")
         for gene, values in gene_dict.items():
             output_file.write("{gene}\t{trans}\t{prot}\t{ortho}\t{name}\t{nt}\t{nt_identity}\t{nr}\t{nr_identity}\t"
                               "{swiss}\t{swiss_identity}\t{neuro}\t{neuro_identity}\t{domains}\t{go}\t"
                               "{ec}\t{ko}\t{pathway}\t{module}\t{reaction}\t{rclass}\t{brite}\t{tc}\t{cazy}\t{bigg}\t"
                               "{og}\t{cog}\t{description}\t{externa}\t{growing}\t{middle}\t{terminal}\t{whole}\t"
-                              "{specificity}\t{markers}\t{exsec}\n".format(
+                              "{overexp}\t{exsec}\n".format(
                                 gene=gene, trans=values["transcript"], prot=values["protein"],
                                 ortho=values["Ortho"][0], name=values["EggNOG:Preferred_name"][0],
                                 nt=values["Anno_nt"]["hit"][0], nt_identity=values["Anno_nt"]["identity"][0],
@@ -188,11 +180,10 @@ def write_output_files(gene_dict, output):
                                 brite=values["EggNOG:BRITE"][0], tc=values["EggNOG:KEGG_TC"][0],
                                 cazy=values["EggNOG:CAZy"][0], bigg=values["EggNOG:BiGG_Reaction"][0],
                                 og=values["EggNOG:OG"][0], cog=values["EggNOG:COG_cat"][0],
-                                description=values["EggNOG:Description"][0], externa=values["Externa_scaledTPM"],
-                                growing=values["Growing_scaledTPM"], middle=values["Middle_scaledTPM"],
-                                terminal=values["Terminal_scaledTPM"], whole=values["Whole_body_scaledTPM"],
-                                specificity=values["Specificity"][0], markers=values["Markers"][0],
-                                exsec=values["ExSec"][0]))
+                                description=values["EggNOG:Description"][0], externa=values["Externa_TPMs"],
+                                growing=values["Growing_TPMs"], middle=values["Middle_TPMs"],
+                                terminal=values["Terminal_TPMs"], whole=values["Whole_body_TPMs"],
+                                overexp="|".join(values["Over-expression"]), exsec=values["ExSec"][0]))
 
 
 if __name__ == "__main__":
@@ -212,24 +203,16 @@ if __name__ == "__main__":
     print("***** Domain architecture parsing *****")
     domains_parsing(gene_dict, prot_2_gene_dict, args.domains)
     print("***** Files with IDs of sequences with preferential expression patterns parsing *****")
-    specificity(gene_dict, args.externa_specific, "Externa")
-    specificity(gene_dict, args.growing_specific, "Growing_trunk")
-    specificity(gene_dict, args.middle_specific, "Main_trunk_part")
-    specificity(gene_dict, args.terminal_specific, "Thoracic_part_of_interna")
-    specificity(gene_dict, args.whole_body_specific, "Whole_body")
+    RNentropy_parsing(gene_dict, args.externa_overexp, "Externa")
+    RNentropy_parsing(gene_dict, args.growing_overexp, "Growing_trunk")
+    RNentropy_parsing(gene_dict, args.middle_overexp, "Main_trunk_part")
+    RNentropy_parsing(gene_dict, args.terminal_overexp, "Thoracic_part_of_interna")
+    RNentropy_parsing(gene_dict, args.whole_body_overexp, "Whole_body")
     for gene, values in gene_dict.items():
-        if len(values["Specificity"]) == 0:
-            values["Specificity"].append('-')
-    markers(gene_dict, args.externa_markers, "Externa")
-    markers(gene_dict, args.growing_markers, "Growing_trunk")
-    markers(gene_dict, args.middle_markers, "Main_trunk_part")
-    markers(gene_dict, args.terminal_markers, "Thoracic_part_of_interna")
-    markers(gene_dict, args.whole_body_markers, "Whole_body")
-    for gene, values in gene_dict.items():
-        if len(values["Markers"]) == 0:
-            values["Markers"].append('-')
+        if len(values["Over-expression"]) == 0:
+            values["Over-expression"].append('-')
     print("***** Table with averaged expression values parsing *****")
-    expression(gene_dict, args.scaled_tpm)
+    expression_parsing(gene_dict, args.expression)
     print("***** Parsing of fasta-files with excretory/secretory sequences *****")
     classic_seqs = SeqIO.parse(args.classic_exsec, "fasta")
     nonclassic_seqs = SeqIO.parse(args.nonclassic_exsec, "fasta")
