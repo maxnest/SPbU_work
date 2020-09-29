@@ -58,10 +58,10 @@ def results_merging(phylostratr_dict, gene_dict, redia_list, cercaria_list, mari
     append_gene(cercaria_list, merged_dict, phylostratr_dict, gene_dict, "Cercaria")
     append_gene(marita_list, merged_dict, phylostratr_dict, gene_dict, "Adult_worm")
 
-    for key, values in merged_dict.items():
-        for stage, genes in values.items():
-            if len(genes) == 0:
-                genes.append("-")
+    #for key, values in merged_dict.items():
+    #    for stage, genes in values.items():
+    #        if len(genes) == 0:
+    #            genes.append("-")
 
 
 def output_writing(output, merged_dict, redia_list, cercaria_list, marita_list):
