@@ -51,8 +51,7 @@ def string_links_parsing(string_links, string_links_dict):
         protein_1, protein_2 = description[0], description[1]
         string_links_dict["{protein_1}_{protein_2}".format(protein_1=protein_1, protein_2=protein_2)] = {
             "first_node": protein_1, "second_node": protein_2,
-            "flatworms_2_first_node": [], "flatworms_2_second_node": [],
-            "action_modes": [],
+            "flatworms_2_first_node": [], "flatworms_2_second_node": [], "action_modes": [],
             "first_rbbh_pair": [], "second_rbbh_pair": []
         }
 
@@ -64,12 +63,15 @@ def string_actions_parsing(string_actions, string_links_dict):
         protein_1, protein_2, action_mode, is_directional, a_is_acting, score = description[0], description[1], \
                                                                                 description[2], description[4], \
                                                                                 description[5], description[6]
-        string_links_dict["{protein_1}_{protein_2}".format(protein_1=protein_1,
-                                                           protein_2=protein_2)]["action_modes"].append(action_mode)
+        pair_key = "{protein_1}_{protein_2}".format(protein_1=protein_1, protein_2=protein_2)
+        string_links_dict[pair_key]["action_modes"].append("{mode} (is_directional:{is_directional};"
+                                                           "first_protein_is_acting:{a_is_acting})".format(
+                                                            mode=action_mode, is_directional=is_directional,
+                                                            a_is_acting=a_is_acting))
 
     for pair, values in string_links_dict.items():
         if len(values["action_modes"]) == 0:
-            values["action_modes"].append("-")
+                values["action_modes"].append("-")
 
 
 def append_flatworms_proteins(string_links_dict, rbbh_dict):
@@ -90,7 +92,8 @@ def output_writing(output, phylostratr_dict, levels_dict, string_links_dict, fla
     with open("{output}.tsv".format(output=output), 'a') as output_file:
         output_file.write("{flatworm}_protein_1_ID\tFirst_RBBH_ID\t{flatworm}_protein_1_phylostrata\t"
                           "{flatworm}_protein_2_ID\tSecond_RBBH_ID\t{flatworm}_protein_2_phylostrata\t"
-                          "{string}_node_1\tInteraction_type\t{string}_node_2\tInteraction_modes\n".format(
+                          "{string}_node_1\tInteraction_type\t{string}_node_2\t"
+                          "Interaction_modes_and_directions\n".format(
                             flatworm=flatworm_tag, string=string_tag))
 
         for pair, values in string_links_dict.items():
@@ -109,7 +112,7 @@ def output_writing(output, phylostratr_dict, levels_dict, string_links_dict, fla
                                                 values["flatworms_2_second_node"].index(second_protein)],
                                             second_phylostrata=levels_dict[phylostratr_dict[second_protein]],
                                             first_node=values["first_node"], second_node=values["second_node"],
-                                            actions="|".join(set(values["action_modes"]))))
+                                            actions="|".join(values["action_modes"])))
 
 
 if __name__ == "__main__":
