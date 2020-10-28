@@ -204,18 +204,16 @@ def phylostratr_parsing(gene_dict, prot_2_gene_dict, phylostratr):
                 ps=ps, mrca_name=mrca_name))
 
 
-def RBBH_parsing(gene_dict, prot_2_gene_dict, rbbh):
+def RBBH_parsing(gene_dict, rbbh):
     header = rbbh.readline()
     for line in rbbh:
         description = line.strip().split("\t")
-        rbbh_ID, first_protein, second_protein = description[0], description[1], description[2]
-        if first_protein in prot_2_gene_dict.keys():
-            gene_dict[prot_2_gene_dict[first_protein]]["RBBH"].append("{id}:{second}".format(
-                id=rbbh_ID, second=second_protein))
+        rbbh_ID, first_gene, second_gene = description[0], description[1], description[2]
+        if first_gene in gene_dict.keys():
+            gene_dict[first_gene]["RBBH"].append("{id}:{second}".format(id=rbbh_ID, second=second_gene))
 
-        if second_protein in prot_2_gene_dict.keys():
-            gene_dict[prot_2_gene_dict[second_protein]]["RBBH"].append("{id}:{first}".format(
-                id=rbbh_ID, first=first_protein))
+        if second_gene in gene_dict.keys():
+            gene_dict[second_gene]["RBBH"].append("{id}:{first}".format(id=rbbh_ID, first=first_gene))
 
     for gene, values in gene_dict.items():
         if len(values["RBBH"]) == 0:
@@ -304,6 +302,6 @@ if __name__ == "__main__":
     print("***** Phylostratigraphic analysis results parsing *****")
     phylostratr_parsing(gene_dict, prot_2_gene_dict, args.phylostratr)
     print("***** RBBHs parsing *****")
-    RBBH_parsing(gene_dict, prot_2_gene_dict, args.rbbh)
+    RBBH_parsing(gene_dict, args.rbbh)
     print("***** Output writing *****")
     write_output_files(gene_dict, args.output, args.second_species_tag)
