@@ -67,7 +67,7 @@ def output_writing(rbbh_dict, string_tag, output):
                             treg=values["treg"][0], tszi=values["tszi"][0], smed=values["smed"][0],
                             mlig=values["mlig"][0], pvit=values["pvit"][0]))
 
-    with open("{output}.common_for_all_flatworms_rbbh.tsv".format(output=output), 'a') as flatworm_rbbh:
+    with open("{output}.rbbh_common_for_all_flatworms.tsv".format(output=output), 'a') as flatworm_rbbh:
         flatworm_rbbh.write("{string}\tCsinensis\tFgigantica\tFhepatica\tOfelineus\tOviverrini\tPsimillimum\t"
                             "Shaematobium\tSjaponicum\tSmansoni\tTregenti\tTszidati\tSmediterranea\tMlignano\t"
                             "Pvittatus\n".format(string=string_tag))
@@ -83,7 +83,7 @@ def output_writing(rbbh_dict, string_tag, output):
                                      sman=values["sman"][0], treg=values["treg"][0], tszi=values["tszi"][0],
                                      smed=values["smed"][0], mlig=values["mlig"][0], pvit=values["pvit"][0]))
 
-    with open("{output}.common_for_trematodes_rbbh.tsv".format(output=output), 'a') as trematoda_rbbh:
+    with open("{output}.rbbh_common_for_trematodes.tsv".format(output=output), 'a') as trematoda_rbbh:
         trematoda_rbbh.write("{string}\tCsinensis\tFgigantica\tFhepatica\tOfelineus\tOviverrini\tPsimillimum\t"
                              "Shaematobium\tSjaponicum\tSmansoni\tTregenti\tTszidati\n".format(string=string_tag))
         for string_seq, values in rbbh_dict.items():
@@ -96,6 +96,14 @@ def output_writing(rbbh_dict, string_tag, output):
                                       fhep=values["fhep"][0], ofel=values["ofel"][0], oviv=values["oviv"][0],
                                       psim=values["psim"][0], shae=values["shae"][0], sjap=values["sjap"][0],
                                       sman=values["sman"][0], treg=values["treg"][0], tszi=values["tszi"][0]))
+
+    with open("{output}.rbbh_common_for_free-living.tsv".format(output=output), 'a') as freeliving_rbbh:
+        freeliving_rbbh.write("{string}\tSmediterranea\tMlignano\tPvittatus\n".format(string=string_tag))
+        for string_seq, values in rbbh_dict.items():
+            hits = [values[species][0] for species in ["smed", "mlig", "pvit"]]
+            if hits.count("-") == 0:
+                freeliving_rbbh.write("{string}\t{smed}\t{mlig}\t{pvit}\n".format(string=string_seq,
+                                      smed=values["smed"][0], mlig=values["mlig"][0], pvit=values["pvit"][0]))
 
 
 if __name__ == "__main__":
