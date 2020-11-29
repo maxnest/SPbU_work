@@ -29,7 +29,8 @@ def outfmt6_parsing(outfmt_6, outfmt6_dict):
 def output_writing(output, outfmt6_dict):
     with open("{output}.bbh.tsv".format(output=output), 'a') as output_file:
         for key, values in outfmt6_dict.items():
-            bit_scores = [float(hit_key.split("|")[1]) for hit_key in values.keys()]
+            bit_scores = [hit_value["bit_score"] for hit_value in values.values()]
+
             for hit_key, hit_value in values.items():
                 if hit_value["bit_score"] == np.max(bit_scores):
                     output_file.write("{line}".format(line=hit_value["line"]))
