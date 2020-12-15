@@ -17,7 +17,8 @@ parser.add_argument('--neuropep', type=argparse.FileType('r'), required=True)
 parser.add_argument('--animaltf', type=argparse.FileType('r'), required=True)
 parser.add_argument('--eggnog', type=argparse.FileType('r'), required=True)
 parser.add_argument('--averaged_expression', type=argparse.FileType('r'), required=True)
-parser.add_argument('--RNentropy', type=argparse.FileType('r'), required=True)
+parser.add_argument('--RNentropy_over', type=argparse.FileType('r'), required=True)
+parser.add_argument('--RNentropy_under', type=argparse.FileType('r'), required=True)
 parser.add_argument('--head_ts', type=argparse.FileType('r'), required=True)
 parser.add_argument('--tail_ts', type=argparse.FileType('r'), required=True)
 parser.add_argument('--both_sites_ts', type=argparse.FileType('r'), required=True)
@@ -54,7 +55,7 @@ def gene_map_parsing(gene_dict, gene_map):
                               "Head_cluster": [], "Tail_cluster": [],
                               "Head_TS": [], "Tail_TS": [], "Both_sites_TS": [],
                               "Phylostrata": [], "RBBH": [],
-                              "RNentropy": [], "Ortho": []}
+                              "RNentropy_over": [], "RNentropy_under": [], "Ortho": []}
 
 
 def orthogroups_parsing(gene_dict, prot_2_gene_dict, orthogroups):
@@ -126,16 +127,16 @@ def domains_parsing(gene_dict, prot_2_gene_dict, domains):
             gene_dict[gene]["domains"].append("-")
 
 
-def RNentropy_parsing(gene_dict, table):
+def RNentropy_parsing(gene_dict, table, tag):
     header = table.readline()
     for line in table:
         description = line.strip().split("\t")
         gene, sample = description[0][1:-1], description[-1][1:-1]
-        gene_dict[gene]["RNentropy"].append(sample)
+        gene_dict[gene]["RNentropy_{tag}".format(tag=tag)].append(sample)
 
     for gene, values in gene_dict.items():
-        if len(values["RNentropy"]) == 0:
-            values["RNentropy"].append("-")
+        if len(values["RNentropy_{tag}".format(tag=tag)]) == 0:
+            values["RNentropy_{tag}".format(tag=tag)].append("-")
 
 
 def expression_parsing(gene_dict, table):
@@ -233,7 +234,8 @@ def write_output_files(gene_dict, output, second_species_tag):
                           "Head_24h_averaged_TPMs\tHead_48h_averaged_TPMs\tHead_96h_averaged_TPMs\t"
                           "Tail_0h_averaged_TPMs\tTail_4h_averaged_TPMs\tTail_12h_averaged_TPMs\t"
                           "Tail_24h_averaged_TPMs\tTail_48h_averaged_TPMs\tTail_96h_averaged_TPMs\t"
-                          "Overexpression_in_samples\tDiffExp_in_time_series:head\tDiffExp_in_time_series:tail\t"
+                          "Overexpression_in_samples\tUnderexpression_in_samples\t"
+                          "DiffExp_in_time_series:head\tDiffExp_in_time_series:tail\t"
                           "DiffExp_in_time_series:between_sites\t"
                           "Co-expression_clusters:head\tCo-expression_clusters:tail\n".format(tag=second_species_tag))
         for gene, values in gene_dict.items():
@@ -244,7 +246,7 @@ def write_output_files(gene_dict, output, second_species_tag):
                               "{rclass}\t{brite}\t{tc}\t{cazy}\t{bigg}\t{og}\t{cog}\t{description}\t{rbbh}\t"
                               "{head_0h}\t{head_4h}\t{head_12h}\t{head_24h}\t{head_48h}\t{head_96h}\t"
                               "{tail_0h}\t{tail_4h}\t{tail_12h}\t{tail_24h}\t{tail_48h}\t{tail_96h}\t"
-                              "{overexp}\t{ts_head}\t{ts_tail}\t{ts_sites}\t"
+                              "{overexp}\t{underexp}\t{ts_head}\t{ts_tail}\t{ts_sites}\t"
                               "{head_clusters}\t{tail_clusters}\n".format(
                                 gene=gene, trans=values["transcript"], prot=values["protein"],
                                 phylostrates=values["Phylostrata"][0], ortho=values["Ortho"][0],
@@ -269,7 +271,9 @@ def write_output_files(gene_dict, output, second_species_tag):
                                 tail_0h=values["Tail_0h_TPMs"], tail_4h=values["Tail_4h_TPMs"],
                                 tail_12h=values["Tail_12h_TPMs"], tail_24h=values["Tail_24h_TPMs"],
                                 tail_48h=values["Tail_48h_TPMs"], tail_96h=values["Tail_96h_TPMs"],
-                                overexp=";".join(values["RNentropy"]), ts_head=values["Head_TS"][0],
+                                overexp=";".join(values["RNentropy_over"]),
+                                underexp=";".join(values["RNentropy_under"]),
+                                ts_head=values["Head_TS"][0],
                                 ts_tail=values["Tail_TS"][0], ts_sites=values["Both_sites_TS"][0],
                                 head_clusters=values["Head_cluster"][0], tail_clusters=values["Tail_cluster"][0]))
 
@@ -293,7 +297,8 @@ if __name__ == "__main__":
     domains_parsing(gene_dict, prot_2_gene_dict, args.domains)
     print("***** Expression parsing *****")
     expression_parsing(gene_dict, args.averaged_expression)
-    RNentropy_parsing(gene_dict, args.RNentropy)
+    RNentropy_parsing(gene_dict, args.RNentropy_over, "over")
+    RNentropy_parsing(gene_dict, args.RNentropy_under, "under")
     time_series_parsing(gene_dict, args.head_ts, "Head_TS")
     time_series_parsing(gene_dict, args.tail_ts, "Tail_TS")
     time_series_parsing(gene_dict, args.both_sites_ts, "Both_sites_TS")
