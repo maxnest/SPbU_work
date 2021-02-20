@@ -106,6 +106,29 @@ def output_writing(output, content_dict):
                     bar_summary.write("{phylostratum}\t{exp_pattern}\t{count}\n".format(
                         phylostratum=phylostrate, exp_pattern=pattern_dict[gene_set_name], count=len(gene_set_list)))
 
+    # Summary table for all stages #
+    molsing_of_samples = {}
+    for sample in samples:
+        molsing_of_samples[sample] = []
+        for phylostrate, values in content_dict.items():
+            for pattern_key in pattern_dict.keys():
+                molsing_of_samples[sample].extend(values[sample][pattern_key])
+
+    with open("{output}.all_samples.summary_table.tsv".format(output=output), 'a') as common_summary:
+        common_summary.write("Phylostratum\tExpression_pattern\t{samples}\n".format(
+            samples="\t".join(
+                ["{sample} ({count} genes)".format(sample=sample, count=len(set(molsing_of_samples[sample])))
+                 for sample in samples])))
+
+        for phylostrate, values in content_dict.items():
+            for pattern_key, pattern_description in pattern_dict.items():
+                common_summary.write("{phylostratum}\t{exp_pattern}\t{counts}\n".format(
+                    phylostratum=phylostrate, exp_pattern=pattern_description,
+                    counts="\t".join(["{count} ({percent}%)".format(
+                        count=len(values[sample][pattern_key]),
+                        percent=round((len(values[sample][pattern_key])/len(set(molsing_of_samples[sample]))) * 100, 2))
+                        for sample in samples])))
+
 
 if __name__ == "__main__":
     phylostratr_dict, common_exp_list, overexp_dict, specific_exp_dict, content_dict = {}, [], {}, {}, {}
@@ -118,6 +141,6 @@ if __name__ == "__main__":
     phylostratigraphy_content(phylostratr_dict, common_exp_list, overexp_dict, specific_exp_dict, content_dict)
     print("***** Output writing *****")
     output_writing(args.output, content_dict)
-    
+
 
 
